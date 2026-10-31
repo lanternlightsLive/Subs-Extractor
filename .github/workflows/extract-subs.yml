@@ -1,0 +1,29 @@
+name: Extract Twitch subscriptions
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Process logs
+        shell: bash
+        run: |
+          shopt -s nullglob
+          files=(logs/*.log logs/*.txt)
+          if (( ${#files[@]} == 0 )); then
+            echo 'No .log or .txt files found in logs/.' >&2
+            exit 1
+          fi
+          mkdir -p reports
+          python extract_twitch_subs.py "${files[@]}" --out reports/subscription_events.csv
+      - uses: actions/upload-artifact@v4
+        with:
+          name: twitch-subscription-reports
+          path: reports/*.csv
+          retention-days: 7
